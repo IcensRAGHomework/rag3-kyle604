@@ -53,10 +53,32 @@ def generate_hw02(question, city, store_type, start_date, end_date):
         include=["metadatas", "distances"],
     )
     t = zip(ret["distances"][0], ret["metadatas"][0])
-    return [i[1]["name"] for i in t if i[0] <= 1 - 0.8]
+    return [m["name"] for d, m in t if d <= 1 - 0.8]
     
 def generate_hw03(question, store_name, new_store_name, city, store_type):
-    pass
+    collection = generate_hw01()
+    ret = collection.query(
+        query_texts=[question],
+        n_results=10,
+        where={"name": {"$eq": store_name}},
+        include=["metadatas", "distances"],
+    )
+    id = ret["ids"][0][0]
+    collection.update(
+        ids=[id],
+        metadatas=[{"new_store_name": new_store_name}]
+    )
+    ret = collection.query(
+        query_texts=[question],
+        n_results=10,
+        where={"$and" : [
+                {"city": {"$in": city}},
+                {"type": {"$in": store_type}},
+        ]},
+        include=["metadatas", "distances"],
+    )
+    t = zip(ret["distances"][0], ret["metadatas"][0])
+    return [m["new_store_name" if "new_store_name" in m else "name"]  for d, m in t if d <= 1 - 0.8]
     
 def demo(question):
     chroma_client = chromadb.PersistentClient(path=dbpath)
@@ -77,4 +99,5 @@ def demo(question):
 
 if __name__ == "__main__":
     #generate_hw01()
-    print(generate_hw02("我想要找有關茶餐點的店家", ["宜蘭縣", "新北市"], ["美食"], datetime.datetime(2024, 4, 1), datetime.datetime(2024, 5, 1)))
+    #print(generate_hw02("我想要找有關茶餐點的店家", ["宜蘭縣", "新北市"], ["美食"], datetime.datetime(2024, 4, 1), datetime.datetime(2024, 5, 1)))
+    print(generate_hw03("我想要找南投縣的田媽媽餐廳，招牌是蕎麥麵", "耄饕客棧", "田媽媽（耄饕客棧）", ["南投縣"], ["美食"]))
