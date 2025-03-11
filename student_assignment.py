@@ -1,6 +1,7 @@
 import datetime
 import chromadb
 import traceback
+import csv
 
 from chromadb.utils import embedding_functions
 
@@ -12,7 +13,31 @@ gpt_emb_config = get_model_configuration(gpt_emb_version)
 dbpath = "./"
 
 def generate_hw01():
-    pass
+    collection = demo("TRAVEL")
+    if collection.count() > 0:
+        return collection
+
+    file_name = "COA_OpenData.csv"
+
+    ids = []
+    documents = []
+    metadatas = []
+    r = csv.DictReader(open(file_name, encoding="UTF-8-sig"))
+    for row in r:
+        ids.append(row['ID'])
+        documents.append(row['HostWords'])
+        metadatas.append({
+                "file_name": file_name,
+                "name": row['Name'],
+                "type": row['Type'],
+                "address": row['Address'],
+                "tel": row['Tel'],
+                "city": row['City'],
+                "town": row['Town'],
+                "date": datetime.datetime.strptime(row['CreateDate'], '%Y-%m-%d').timestamp(),
+            })
+    collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+    return collection
     
 def generate_hw02(question, city, store_type, start_date, end_date):
     pass
@@ -36,3 +61,6 @@ def demo(question):
     )
     
     return collection
+
+if __name__ == "__main__":
+    generate_hw01()
